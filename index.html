@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sparatutto 3D con Blockchain</title>
+    <style>
+        body, html {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+        canvas {
+            display: block;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 24px;
+        }
+        #wallet-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <div id="wallet-status">Connecting to wallet...</div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+
+    <script>
+        // Inizializzazione di Three.js
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gameCanvas') });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Creazione del player (cubo)
+        const geometry = new THREE.BoxGeometry();
+        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        const player = new THREE.Mesh(geometry, material);
+        scene.add(player);
+
+        camera.position.z = 5;
+
+        let score = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rotazione del player
+            player.rotation.x += 0.01;
+            player.rotation.y += 0.01;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Aggiorna il punteggio del giocatore
+        function updateScore() {
+            score += 10;
+            document.getElementById('score').innerText = `Score: ${score}`;
+            updatePlayerScore(score);
+        }
+
+        // Funzione per connessione a Metamask e contratto
+        let web3;
+        let contract;
+        const contractAddress = 'YOUR_CONTRACT_ADDRESS'; // Inserisci qui l'indirizzo del contratto
+        const abi = [ /* ABI del contratto Solidity qui */ ];
+
+        async function loadBlockchainData() {
+            if (typeof window.ethereum !== 'undefined') {
+                web3 = new Web3(window.ethereum);
+                await ethereum.request({ method: 'eth_requestAccounts' });
+                const accounts = await web3.eth.getAccounts();
+                document.getElementById('wallet-status').innerText = `Connected: ${accounts[0]}`;
+                contract = new web3.eth.Contract(abi, contractAddress);
+            } else {
+                alert('Installa Metamask!');
+            }
+        }
+
+        async function updatePlayerScore(score) {
+            const accounts = await web3.eth.getAccounts();
+            await contract.methods.updateScore(accounts[0], score).send({ from: accounts[0] });
+        }
+
+        loadBlockchainData();
+
+        // Esempio di simulazione: ogni 5 secondi incrementa il punteggio e lo aggiorna su blockchain
+        setInterval(updateScore, 5000);
+    </script>
+</body>
+</html>
